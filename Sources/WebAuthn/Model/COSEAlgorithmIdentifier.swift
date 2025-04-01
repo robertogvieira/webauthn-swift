@@ -14,7 +14,7 @@
 
 import Foundation
 
-enum COSEAlgorithmIdentifier: Int, Codable, CaseIterable {
+public enum COSEAlgorithmIdentifier: Int, Codable, CaseIterable {
     case RS1   = -65535 // RSASSA-PKCS1-v1_5 with SHA-1
     case RS256 = -257   // RSASSA-PKCS1-v1_5 with SHA-256
     case RS384 = -258   // RSASSA-PKCS1-v1_5 with SHA-384

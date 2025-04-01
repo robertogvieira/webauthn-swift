@@ -15,4 +15,9 @@
 public struct PublicKeyCredentialParameters: Codable {
     let type: String
     let alg: COSEAlgorithmIdentifier
+    
+    public init(type: String, alg: COSEAlgorithmIdentifier) {
+        self.type = type
+        self.alg = alg
+    }
 }

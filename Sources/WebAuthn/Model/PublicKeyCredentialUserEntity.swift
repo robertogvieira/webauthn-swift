@@ -16,4 +16,10 @@ public struct PublicKeyCredentialUserEntity: Codable {
     let id: String // same as user handle
     let name: String
     let displayName: String
+    
+    public init(id: String, name: String, displayName: String) {
+        self.id = id
+        self.name = name
+        self.displayName = displayName
+    }
 }

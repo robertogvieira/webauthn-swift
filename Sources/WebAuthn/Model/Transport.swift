@@ -12,7 +12,7 @@
 // License for the specific language governing permissions and limitations
 // under the License.
 
-enum Transport: String, Codable {
+public enum Transport: String, Codable {
     case usb = "usb"
     case nfc = "nfc"
     case ble = "ble"

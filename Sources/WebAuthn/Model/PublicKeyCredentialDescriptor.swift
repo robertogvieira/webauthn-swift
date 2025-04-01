@@ -16,4 +16,10 @@ public struct PublicKeyCredentialDescriptor: Codable {
     let type: String
     let id: String // credential id
     let transports: [Transport]?
+    
+    public init(type: String, id: String, transports: [Transport]?) {
+        self.type = type
+        self.id = id
+        self.transports = transports
+    }
 }

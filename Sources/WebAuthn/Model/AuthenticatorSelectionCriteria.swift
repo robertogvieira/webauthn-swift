@@ -15,4 +15,9 @@
 public struct AuthenticatorSelectionCriteria: Codable {
     let authenticatorAttachment: AuthenticatorAttachment
     let userVerification: UserVerificationRequirement
+    
+    public init(authenticatorAttachment: AuthenticatorAttachment, userVerification: UserVerificationRequirement) {
+        self.authenticatorAttachment = authenticatorAttachment
+        self.userVerification = userVerification
+    }
 }
