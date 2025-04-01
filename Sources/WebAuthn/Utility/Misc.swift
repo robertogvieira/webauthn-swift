@@ -23,7 +23,5 @@ func generateRandomBytes(len: Int) -> Data? {
 }
 
 func getOrigin() -> String? {
-    if let bundleId = Bundle.main.bundleIdentifier {
-        return "ios:bundle-id:" + bundleId
-    } else { return nil }
+    return "ios-app"
 }
