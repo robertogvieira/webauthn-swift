@@ -95,6 +95,7 @@ extension PublicKeyCredential {
             credIdStr = authnResult.credentialId.toBase64Url()
             let createResult = PublicKeyCredentialCreateResult(
                 id: authnResult.credentialId,
+                challenge: createOptions.challenge,
                 clientDataJson: clientDataJson,
                 attestation: authnResult.attestationObject,
                 clientExtensionsOutput: createOptions.extensions?.processClientExtensionsOutput())

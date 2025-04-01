@@ -16,6 +16,7 @@ import Foundation
 
 public struct PublicKeyCredentialCreateResult {
     public let id: Data
+    public let challenge: String
     public let clientDataJson: Data
     public let attestation: Data
     public let clientExtensionsOutput: ClientExtensionsOutput?
