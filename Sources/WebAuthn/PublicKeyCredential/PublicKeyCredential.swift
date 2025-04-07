@@ -13,6 +13,7 @@
 // under the License.
 
 import Foundation
+import LocalAuthentication
 
 // It can be possible to generate several `PublicKeyCredential` instances
 // concurrently. It means that multiple accounts can be registered for one user.
@@ -52,7 +53,7 @@ extension PublicKeyCredential {
     /// This method allows you to register a user credential by generating an
     /// asymmetric key pair. The private key is securely stored on the client
     /// side, while the public key is stored by the relying party.
-    public func create(_ options: RP.RegOpts) async -> Result<Bool, WebAuthnError> {
+    public func create(_ options: RP.RegOpts, context: LAContext?) async -> Result<Bool, WebAuthnError> {
         var credIdStr: String?
         do {
             let data = try await rp.getRegistrationData(options).mapError { e in
@@ -91,7 +92,8 @@ extension PublicKeyCredential {
                 userEntity: createOptions.user,
                 credTypesAndPubKeyAlgs: credTypesAndPubKeyAlgs,
                 excludeCredentialDescriptorList: createOptions.excludeCredentials,
-                extensions: createOptions.extensions?.processAuthenticatorExtensionsInput()).get()
+                extensions: createOptions.extensions?.processAuthenticatorExtensionsInput(),
+                context: context).get()
             credIdStr = authnResult.credentialId.toBase64Url()
             let createResult = PublicKeyCredentialCreateResult(
                 id: authnResult.credentialId,
@@ -133,7 +135,7 @@ extension PublicKeyCredential {
 
     /// This method allows you to authenticate a user by communicating with a
     /// relying party using a previously registered credential.
-    public func get(_ options: RP.AuthnOpts) async -> Result<Bool, WebAuthnError> {
+    public func get(_ options: RP.AuthnOpts, context: LAContext?) async -> Result<Bool, WebAuthnError> {
         do {
             let data = try await rp.getAuthenticationData(options).mapError { e in
                 WebAuthnError.rpError(e)
@@ -158,7 +160,8 @@ extension PublicKeyCredential {
                 rpId: getOptions.rpId,
                 hash: clientDataJson.toSHA256(),
                 allowCredentialDescriptorList: getOptions.allowCredentials,
-                extensions: getOptions.extensions?.processAuthenticatorExtensionsInput()).get()
+                extensions: getOptions.extensions?.processAuthenticatorExtensionsInput(),
+                context: context).get()
             let getResult = PublicKeyCredentialGetResult(
                 id: authnResult.credentialId,
                 clientDataJson: clientDataJson,
