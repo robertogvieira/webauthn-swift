@@ -13,6 +13,7 @@
 // under the License.
 
 import Foundation
+import LocalAuthentication
 
 public final class KeyStorage {
     private let keychain: KeychainProtocol
@@ -29,12 +30,15 @@ public final class KeyStorage {
         }
     }
 
-    func load(_ kid: String) -> Result<SecKey?, KeyStorageError> {
-        let query: [String: Any] = [
+    func load(_ kid: String, context: LAContext? = nil) -> Result<SecKey?, KeyStorageError> {
+        var query: [String: Any] = [
             kSecClass as String: kSecClassKey,
             kSecAttrLabel as String: kid,
             kSecReturnRef as String: true
         ]
+        if let context {
+            query[kSecUseAuthenticationContext as String] = context
+        }
         var queryResult: AnyObject?
         let keychainResponse = keychain.get(query)
         queryResult = keychainResponse.queryResult
@@ -51,17 +55,20 @@ public final class KeyStorage {
         return .success((item as! SecKey))
     }
 
-    func store(_ id: String, key: SecKey) -> Result<(), KeyStorageError> {
-        let result = load(id)
+    func store(_ id: String, key: SecKey, context: LAContext? = nil) -> Result<(), KeyStorageError> {
+        let result = load(id, context: context)
         switch result {
         case .failure(let error):
             return .failure(error)
         case .success(let val):
             if let _ = val {
-                let query: [String: Any] = [
+                var query: [String: Any] = [
                     kSecClass as String: kSecClassKey,
                     kSecAttrLabel as String: id
                 ]
+                if let context {
+                    query[kSecUseAuthenticationContext as String] = context
+                }
                 let attributes: [String: Any] = [kSecValueRef as String: key]
                 let status = keychain.update(query, with: attributes)
                 guard status == errSecSuccess else {
@@ -71,12 +78,15 @@ public final class KeyStorage {
                 guard let access = access else {
                     return .failure(.accessFailed)
                 }
-                let query: [String: Any] = [
+                var query: [String: Any] = [
                     kSecClass as String: kSecClassKey,
                     kSecAttrLabel as String: id,
                     kSecAttrAccessControl as String: access,
                     kSecValueRef as String: key
                 ]
+                if let context {
+                    query[kSecUseAuthenticationContext as String] = context
+                }
                 let status = keychain.add(query)
                 guard status == errSecSuccess else {
                     return .failure(.storeFailed(status: status))

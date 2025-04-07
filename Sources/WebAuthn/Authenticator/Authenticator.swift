@@ -13,6 +13,7 @@
 // under the License.
 
 import Foundation
+import LocalAuthentication
 
 protocol Authenticator {
     var type: AuthenticatorType { get }
@@ -26,14 +27,16 @@ protocol Authenticator {
         userEntity: PublicKeyCredentialUserEntity,
         credTypesAndPubKeyAlgs: [PublicKeyCredentialParameters],
         excludeCredentialDescriptorList: [PublicKeyCredentialDescriptor]?,
-        extensions: AuthenticatorExtensionsInput?
+        extensions: AuthenticatorExtensionsInput?,
+        context: LAContext?
     ) async -> Result<AuthenticatorMakeCredentialResult, WebAuthnError>
 
     func getAssertion(
         rpId: String,
         hash: Data,
         allowCredentialDescriptorList: [PublicKeyCredentialDescriptor]?,
-        extensions: AuthenticatorExtensionsInput?
+        extensions: AuthenticatorExtensionsInput?,
+        context: LAContext?
     ) async -> Result<AuthenticatorGetAssertionResult, WebAuthnError>
 }
 
@@ -98,7 +101,8 @@ extension Authenticator {
                         userEntity: PublicKeyCredentialUserEntity,
                         credTypesAndPubKeyAlgs: [PublicKeyCredentialParameters],
                         excludeCredentialDescriptorList: [PublicKeyCredentialDescriptor]?,
-                        extensions: AuthenticatorExtensionsInput?
+                        extensions: AuthenticatorExtensionsInput?,
+                        context: LAContext?
     ) async -> Result<AuthenticatorMakeCredentialResult, WebAuthnError> {
         do {
             guard let matchedKeyParam = checkCredTypesAndPubKeyAlgsSupported(credTypesAndPubKeyAlgs) else {
@@ -109,8 +113,10 @@ extension Authenticator {
             guard isNotRegistered else {
                 throw WebAuthnError.coreError(.invalidStateError)
             }
-            guard try await localAuthn.execute().get() else {
-                throw WebAuthnError.coreError(.notAllowedError)
+            if context == nil {
+                guard try await localAuthn.execute().get() else {
+                    throw WebAuthnError.coreError(.notAllowedError)
+                }
             }
             guard let credentialId = generateRandomBytes(len: 32) else {
                 throw WebAuthnError.utilityError(cause: "Failed to generate random bytes")
@@ -138,7 +144,7 @@ extension Authenticator {
             _ = try credSrcStorage.store(credSource).mapError { e in
                 WebAuthnError.credSrcStorageError(e, credId: credSource.id)
             }.get()
-            _ = try keyStorage.store(credSource.id, key: priKey).mapError { e in
+            _ = try keyStorage.store(credSource.id, key: priKey, context: context).mapError { e in
                 WebAuthnError.keyStorageError(e, credId: credSource.id)
             }.get()
             return .success(AuthenticatorMakeCredentialResult(credentialId: credentialId,
@@ -154,7 +160,8 @@ extension Authenticator {
     func getAssertion(rpId: String,
                       hash: Data,
                       allowCredentialDescriptorList: [PublicKeyCredentialDescriptor]?,
-                      extensions: AuthenticatorExtensionsInput?
+                      extensions: AuthenticatorExtensionsInput?,
+                      context: LAContext?
     ) async -> Result<AuthenticatorGetAssertionResult, WebAuthnError> {
         do {
             let credentialOptions = try checkAllowedCredentials(rpId, allowCredentialDescriptorList).get()
@@ -164,7 +171,7 @@ extension Authenticator {
             let selectedCredential = credentialOptions[0]
             let credId = selectedCredential.id
             let rpIdHash = rpId.toSHA256()
-            let key = try keyStorage.load(credId).mapError { e in
+            let key = try keyStorage.load(credId, context: context).mapError { e in
                 WebAuthnError.keyStorageError(e, credId: credId)
             }.get()
             guard let key = key else {
